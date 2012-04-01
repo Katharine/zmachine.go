@@ -209,8 +209,20 @@ func (this *ZMachine) executeCycle() {
 		}
 	}
 
-	// TODO: Actually call things somehow.
-	_ = reallyVariable
+	if reallyVariable {
+		impvop[opcode](this, operands...)
+	} else {
+		switch operandCount {
+		case 0:
+			imp0op[opcode](this)
+		case 1:
+			imp1op[opcode](this, operands[0])
+		case 2:
+			imp2op[opcode](this, operands[0], operands[2])
+		default:
+			panic("Too many operands!")
+		}
+	}
 
 	this.opcodesExecuted++
 }

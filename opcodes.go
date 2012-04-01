@@ -2,6 +2,8 @@ package zmachine
 
 import "strings"
 
+var imp0op = []func(*ZMachine){}
+
 var imp1op = []func(*ZMachine, uint16){}
 
 var imp2op = []func(*ZMachine, uint16, uint16){}
@@ -76,7 +78,7 @@ var impvop = []func(*ZMachine, ...uint16){
 		read = strings.ToLower(read)
 		zscii := ZSCIIString{[]byte(read), this}
 		copy(this.memory[text+1:text+maxlength+1], zscii.Bytes())
-		this.memory[text+zscii.Size()+1] = 0 // Terminate string with null byte.
+		this.memory[text+zscii.Size()+1] = 0 // Terminate string with null
 		this.tokeniseZSCII(parse, zscii)
 	},
 }
