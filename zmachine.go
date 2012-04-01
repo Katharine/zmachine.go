@@ -288,10 +288,11 @@ func (this *ZMachine) branch(result bool) {
 
 // Used to return from a Z-Code routine, placing value in the appropriate location.
 func (this *ZMachine) returnFromRoutine(value uint16) {
-	stackTop := this.callStack.Pop()    // The top of the stack after returning
-	this.pc = int(this.callStack.Pop()) // The program counter after returning
-	retVar := this.callStack.Pop()      // The variable the caller wants the return value placed in
-	this.callStack.Pop()                // A useless value
+	stackTop := this.callStack.Pop()           // The top of the stack after returning
+	this.pc = int(this.callStack.Pop())        // The program counter after returning...
+	this.pc |= int(this.callStack.Pop()) << 16 // ... second byte
+	retVar := this.callStack.Pop()             // The variable the caller wants the return value placed in
+	this.callStack.Pop()                       // A useless value
 	this.stack.Truncate(uint(stackTop))
 	this.setVariable(byte(retVar), value)
 }
