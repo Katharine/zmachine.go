@@ -62,7 +62,7 @@ func (this *ZMachine) getObjectPropertyAddress(obj, prop byte) int {
 	return 0
 }
 
-func (this *ZMachine) getPropertySize(obj, prop byte) byte {
+func (this *ZMachine) getObjectPropertySize(obj, prop byte) byte {
 	address := this.getObjectPropertyAddress(obj, prop) - 1
 	return this.memory[address]/32 + 1
 }
@@ -107,4 +107,33 @@ func (this *ZMachine) getObjectPreviousSibling(obj byte) byte {
 		}
 	}
 	return 0
+}
+
+func (this *ZMachine) removeObject(obj byte) {
+	address := this.getObjectAddress(obj)
+	previousSibling := this.getObjectPreviousSibling(obj)
+	if previousSibling == 0 {
+		parent := this.memory[address+4]
+		if parent > 0 {
+			parentAddress := this.getObjectAddress(parent)
+			this.memory[parentAddress+6] = this.memory[address+5] // object.parentNode.firstChild = object.nextSibling
+		}
+	} else {
+		previousAddress := this.getObjectAddress(previousSibling)
+		this.memory[previousAddress+5] = this.memory[address+5] // object.previousSibling.nextSibling = object.nextSibling
+	}
+	this.memory[address+5] = 0 // object.nextSibling = null
+	this.memory[address+4] = 0 // object.parentNode = null
+}
+
+func (this *ZMachine) insertObject(obj, dest byte) {
+	objAddress := this.getObjectAddress(obj)
+	destAddress := this.getObjectAddress(dest)
+
+	// Pull the object out of its old location.
+	this.removeObject(obj)
+
+	this.memory[objAddress+5] = this.memory[destAddress+6] // object.nextSibling = dest.firstChild
+	this.memory[objAddress+4] = dest                       // object.parentNode = dest
+	this.memory[destAddress+6] = obj                       // dest.firstChild = object
 }
