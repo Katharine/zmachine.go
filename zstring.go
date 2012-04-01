@@ -22,12 +22,16 @@ func ZStringFromMemory(machine *ZMachine, address int) ZString {
 	return ZString{s, machine}
 }
 
-func (this *ZString) ToZSCII() ZSCIIString {
+func (this *ZString) ZSCIIString() ZSCIIString {
 	return this.toZSCII(true)
 }
 
 func (this *ZString) Bytes() []byte {
 	return this.chars
+}
+
+func (this *ZString) Size() int {
+	return len(this.chars)
 }
 
 func (this *ZString) toZSCII(expand bool) ZSCIIString {
