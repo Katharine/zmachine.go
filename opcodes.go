@@ -1,10 +1,10 @@
 package zmachine
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
-	"fmt"
 )
 
 var imp0op = []func(*ZMachine){
@@ -193,7 +193,7 @@ var imp1op = []func(*ZMachine, uint16){
 }
 
 var imp2op = []func(*ZMachine, uint16, uint16){
-	nil, 
+	nil,
 	// je
 	func(this *ZMachine, a, b uint16) {
 		this.branch(a == b)
@@ -364,14 +364,14 @@ var imp2op = []func(*ZMachine, uint16, uint16){
 	},
 }
 
-var imp3op = map[byte]func(*ZMachine, uint16, uint16, uint16) {
+var imp3op = map[byte]func(*ZMachine, uint16, uint16, uint16){
 	// je
 	1: func(this *ZMachine, a, b, c uint16) {
 		this.branch(a == b || a == c)
 	},
 }
 
-var imp4op = map[byte]func(*ZMachine, uint16, uint16, uint16, uint16) {
+var imp4op = map[byte]func(*ZMachine, uint16, uint16, uint16, uint16){
 	// je
 	1: func(this *ZMachine, a, b, c, d uint16) {
 		this.branch(a == b || a == c || a == d)
@@ -471,7 +471,7 @@ var impvop = []func(*ZMachine, ...uint16){
 
 	// print_num
 	func(this *ZMachine, args ...uint16) {
-		this.output <- fmt.Sprintf("%d",args[0])
+		this.output <- fmt.Sprintf("%d", args[0])
 	},
 
 	// random
