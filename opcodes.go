@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"fmt"
 )
 
 var imp0op = []func(*ZMachine){
@@ -32,7 +33,6 @@ var imp0op = []func(*ZMachine){
 		this.pc += (zchars.Size() / 3) * 2
 		zscii := zchars.ZSCIIString()
 		this.output <- zscii.String()
-
 		this.output <- "\n"
 		this.returnFromRoutine(1)
 	},
@@ -60,8 +60,15 @@ var imp0op = []func(*ZMachine){
 		this.returnFromRoutine(this.stack.Pop())
 	},
 
+	// pop
+	func(this *ZMachine) {
+		this.stack.Pop()
+	},
+
 	// quit (TODO)
-	nil,
+	func(this *ZMachine) {
+		panic("Story ended.")
+	},
 
 	// new_line
 	func(this *ZMachine) {
@@ -105,7 +112,6 @@ var imp1op = []func(*ZMachine, uint16){
 	func(this *ZMachine, obj uint16) {
 		parent := uint16(this.getObjectParent(byte(obj)))
 		this.store(parent)
-		this.branch(parent != 0)
 	},
 
 	// get_prop_len
@@ -186,7 +192,191 @@ var imp1op = []func(*ZMachine, uint16){
 	},
 }
 
-var imp2op = []func(*ZMachine, uint16, uint16){}
+var imp2op = []func(*ZMachine, uint16, uint16){
+	nil, 
+	// je
+	func(this *ZMachine, a, b uint16) {
+		this.branch(a == b)
+	},
+
+	// jl
+	func(this *ZMachine, a, b uint16) {
+		this.branch(int16(a) < int16(b))
+	},
+
+	// jg
+	func(this *ZMachine, a, b uint16) {
+		this.branch(int16(a) > int16(b))
+	},
+
+	// dec_chk
+	func(this *ZMachine, a, b uint16) {
+		variable := byte(a)
+		check := int16(b)
+
+		varValue := this.getVariable(variable)
+		varValue--
+		this.setVariable(variable, varValue)
+
+		this.branch(int16(varValue) < check)
+	},
+
+	// inc_chk
+	func(this *ZMachine, a, b uint16) {
+		variable := byte(a)
+		check := int16(b)
+
+		varValue := this.getVariable(variable)
+		varValue++
+		this.setVariable(variable, varValue)
+
+		this.branch(int16(varValue) > check)
+	},
+
+	// jin
+	func(this *ZMachine, a, b uint16) {
+		this.branch(this.getObjectParent(byte(a)) == byte(b))
+	},
+
+	// test
+	func(this *ZMachine, bitmap, flags uint16) {
+		this.branch(bitmap&flags == flags)
+	},
+
+	// or
+	func(this *ZMachine, a, b uint16) {
+		this.store(a | b)
+	},
+
+	// and
+	func(this *ZMachine, a, b uint16) {
+		this.store(a & b)
+	},
+
+	// test_attr
+	func(this *ZMachine, obj, attr uint16) {
+		this.branch(this.getObjectAttribute(byte(obj), byte(attr)))
+	},
+
+	// set_attr
+	func(this *ZMachine, obj, attr uint16) {
+		this.setObjectAttribute(byte(obj), byte(attr), true)
+	},
+
+	// clear_attr
+	func(this *ZMachine, obj, attr uint16) {
+		this.setObjectAttribute(byte(obj), byte(attr), false)
+	},
+
+	// store
+	func(this *ZMachine, variable, value uint16) {
+		this.setVariable(byte(variable), value)
+	},
+
+	// insert_obj
+	func(this *ZMachine, obj, dest uint16) {
+		this.insertObject(byte(obj), byte(dest))
+	},
+
+	// loadw
+	func(this *ZMachine, array, index uint16) {
+		this.store(this.number(int(array) + int(index)*2))
+	},
+
+	// loadb
+	func(this *ZMachine, array, index uint16) {
+		this.store(uint16(this.memory[array+index]))
+	},
+
+	// get_prop
+	func(this *ZMachine, obj, prop uint16) {
+		address := this.getObjectPropertyAddress(byte(obj), byte(prop))
+		if address == 0 {
+			this.store(this.number(this.getDefaultPropertyAddress(byte(prop))))
+		} else {
+			size := this.getObjectPropertySize(byte(obj), byte(prop))
+			if size == 1 {
+				this.store(uint16(this.memory[address]))
+			} else {
+				this.store(this.number(address))
+			}
+		}
+	},
+
+	// get_prop_addr
+	func(this *ZMachine, obj, prop uint16) {
+		this.store(uint16(this.getObjectPropertyAddress(byte(obj), byte(prop))))
+	},
+
+	// get_next_prop
+	func(this *ZMachine, objw, propw uint16) {
+		obj := byte(objw)
+		prop := byte(propw)
+		var address int
+		if prop == 0 {
+			address = this.getObjectPropertyTableAddress(obj)
+			address += int(this.memory[address])*2 + 1
+		} else {
+			address = this.getObjectPropertyAddress(obj, prop)
+			address += int(this.memory[address-1])/32 + 1
+		}
+		nextSizeByte := this.memory[address]
+		if address == 0 {
+			panic("get_next_prop on nonexistent object property!")
+		}
+		if nextSizeByte == 0 {
+			this.store(0)
+		} else {
+			this.store(uint16(nextSizeByte % 32))
+		}
+	},
+
+	// add
+	func(this *ZMachine, a, b uint16) {
+		this.store(a + b)
+	},
+
+	// sub
+	func(this *ZMachine, a, b uint16) {
+		this.store(a - b)
+	},
+
+	// mul
+	func(this *ZMachine, a, b uint16) {
+		this.store(a * b)
+	},
+
+	// div
+	func(this *ZMachine, a, b uint16) {
+		if b == 0 {
+			panic("div by zero")
+		}
+		// Division is the only operation for which signedness actually matters.
+		this.store(uint16(int16(a) / int16(b)))
+	},
+
+	// mod
+	func(this *ZMachine, a, b uint16) {
+		if b == 0 {
+			panic("mod by zero")
+		}
+		this.store(uint16(int16(a) % int16(b)))
+	},
+}
+
+var imp3op = map[byte]func(*ZMachine, uint16, uint16, uint16) {
+	// je
+	1: func(this *ZMachine, a, b, c uint16) {
+		this.branch(a == b || a == c)
+	},
+}
+
+var imp4op = map[byte]func(*ZMachine, uint16, uint16, uint16, uint16) {
+	// je
+	1: func(this *ZMachine, a, b, c, d uint16) {
+		this.branch(a == b || a == c || a == d)
+	},
+}
 
 var impvop = []func(*ZMachine, ...uint16){
 	// call
@@ -281,7 +471,7 @@ var impvop = []func(*ZMachine, ...uint16){
 
 	// print_num
 	func(this *ZMachine, args ...uint16) {
-		this.output <- string(args[0])
+		this.output <- fmt.Sprintf("%d",args[0])
 	},
 
 	// random

@@ -16,6 +16,9 @@ func (this *Stack) Pop() uint16 {
 }
 
 func (this *Stack) Peek() uint16 {
+	if this.pointer == 0 {
+		return 0
+	}
 	return this.store[this.pointer-1]
 }
 

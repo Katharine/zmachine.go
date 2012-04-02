@@ -2,13 +2,12 @@ package zmachine
 
 import "bytes"
 
-func (this *ZMachine) locateStringInDictionary(str ZString) int {
+func (this *ZMachine) locateStringInDictionary(bytes []byte) int {
 	index := this.dictionaryLength / 2
 	lowerBound := uint16(0)
 	upperBound := this.dictionaryLength
 	k := uint16(this.dictionaryEntryLength)
 	start := this.dictionaryStart + uint16(this.memory[this.dictionaryStart]) + 4
-	bytes := str.Bytes()
 	for {
 		direction := 0
 		for j := uint16(0); j < 4; j++ {
@@ -25,7 +24,7 @@ func (this *ZMachine) locateStringInDictionary(str ZString) int {
 		switch {
 		case direction == 0:
 			return int(start + index*k)
-		case upperBound == lowerBound:
+		case upperBound == lowerBound || index == lowerBound || index == upperBound:
 			return 0
 		case direction < 0:
 			upperBound = index
@@ -49,7 +48,7 @@ func (this *ZMachine) tokeniseZSCII(table int, zscii ZSCIIString) {
 			if len(nextWord) > 0 {
 				words = append(words, nextWord)
 				wordStarts = append(wordStarts, lastNewWord)
-				nextWord = nextWord[0:0]
+				nextWord = make([]byte, 0, 6)
 			}
 
 			// We include the separator iff it's not a space.
@@ -83,7 +82,7 @@ func (this *ZMachine) tokeniseZSCII(table int, zscii ZSCIIString) {
 
 		// Stuff the relevant information in.
 		this.setNumber(table+i*4+2+0, uint16(pos))     // Bytes 0-1: Position in dictionary
-		this.memory[table+i*4+2+3] = byte(len(word))   // Byte 2: Length of word in ZSCII string
-		this.memory[table+i*4+2+5] = wordStarts[i] + 1 // Byte 3: Start of word in ZSCII string
+		this.memory[table+i*4+2+2] = byte(len(word))   // Byte 2: Length of word in ZSCII string
+		this.memory[table+i*4+2+3] = wordStarts[i] + 1 // Byte 3: Start of word in ZSCII string
 	}
 }

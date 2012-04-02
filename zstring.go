@@ -26,7 +26,7 @@ func (this *ZString) ZSCIIString() ZSCIIString {
 	return this.toZSCII(true)
 }
 
-func (this *ZString) Bytes() []byte {
+func (this *ZString) Chars() []byte {
 	return this.chars
 }
 
@@ -69,7 +69,7 @@ func (this *ZString) toZSCII(expand bool) ZSCIIString {
 				if zchar == 1 || this.z.version >= 3 {
 					i += 1
 					offset := int(this.chars[i])
-					zchar_abbr := ZStringFromMemory(this.z, (int(this.z.abbreviationStart)+2*((32*(int(zchar)-1))+offset))*2)
+					zchar_abbr := this.z.zString(int(this.z.number(int(this.z.abbreviationStart)+2*((32*(int(zchar)-1))+offset))), true)
 					abbr := zchar_abbr.toZSCII(false)
 					zscii = append(zscii, abbr.Bytes()...)
 				}
@@ -89,9 +89,9 @@ func (this *ZString) toZSCII(expand bool) ZSCIIString {
 			} else {
 				panic(fmt.Sprintf("Unknown Z-character %d!", zchar))
 			}
-		}
-		if temporary {
-			alphabet = last_alphabet
+			if temporary {
+				alphabet = last_alphabet
+			}
 		}
 	}
 

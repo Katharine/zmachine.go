@@ -54,7 +54,7 @@ func (this *ZSCIIString) String() string {
 	return string(s)
 }
 
-func (this *ZSCIIString) ZString(size int) ZString {
+func (this *ZSCIIString) ZString(size int) []byte {
 	zcharLimit := size / 2 * 3
 	zchars := make([]byte, zcharLimit)
 
@@ -94,7 +94,7 @@ func (this *ZSCIIString) ZString(size int) ZString {
 		words[j+1] = low
 	}
 
-	return ZString{zchars, this.z}
+	return words
 }
 
 func zcharFromZSCIIChar(char byte) []byte {
@@ -126,5 +126,5 @@ func zcharFromZSCIIChar(char byte) []byte {
 	case char >= '0' && char <= '9':
 		return []byte{5, char - '0' + 8}
 	}
-	return []byte{5, specialCases[char]}
+	return []byte{5, specialCases[char] + 6}
 }

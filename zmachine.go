@@ -1,9 +1,6 @@
 package zmachine
 
-import (
-	"log"
-	"os"
-)
+import "os"
 
 type OperandType byte
 type OpcodeFormat byte
@@ -100,16 +97,31 @@ func (this *ZMachine) CompleteSetup() {
 	this.dictionaryEntryLength = this.memory[n]
 	this.dictionaryLength = this.number(int(n + 1))
 
-	log.Printf("Loaded version %d story file from %s", this.version, this.story_file)
-	log.Printf("dynamic_end: 0x%x, static_end: 0x%x, high_start: 0x%x", this.memoryDynamicEnd, this.memoryStaticEnd, this.memoryHighStart)
-	log.Printf("dictionaryStart: 0x%x, dictionaryEntryLength: %d, objectTableStart: 0x%x, globalVariableStart: 0x%x, abbreviationStart; 0x%x",
-		this.dictionaryStart, this.dictionaryEntryLength, this.objectTableStart, this.globalVariableStart, this.abbreviationStart)
-	log.Printf("pc: 0x%x", this.pc)
+	//log.Printf("Loaded version %d story file from %s", this.version, this.story_file)
+	//log.Printf("dynamic_end: 0x%x, static_end: 0x%x, high_start: 0x%x", this.memoryDynamicEnd, this.memoryStaticEnd, this.memoryHighStart)
+	//log.Printf("dictionaryStart: 0x%x, dictionaryEntryLength: %d, objectTableStart: 0x%x, globalVariableStart: 0x%x, abbreviationStart; 0x%x",
+	//	this.dictionaryStart, this.dictionaryEntryLength, this.objectTableStart, this.globalVariableStart, this.abbreviationStart)
+	//log.Printf("pc: 0x%x", this.pc)
+}
+
+func (this *ZMachine) mainLoop() {
+	for this.running {
+		this.executeCycle()
+	}
+}
+
+func (this *ZMachine) Run() {
+	this.LoadStory()
+	this.CompleteSetup()
+	if !this.running {
+		this.running = true
+		this.mainLoop()
+	}
 }
 
 func (this *ZMachine) number(address int) uint16 {
 	if address > int(this.memoryHighEnd)-1 {
-		panic("Attempt to retrieve data from past the end of high memory")
+		//panic("Attempt to retrieve data from past the end of high memory")
 	}
 
 	top := uint16(this.memory[address]) << 8
@@ -187,12 +199,14 @@ func (this *ZMachine) executeCycle() {
 		bits := this.memory[this.pc]
 		operandTypes = make([]OperandType, 0, 4)
 		for i := uint(0); i < 4; i++ {
-			now := OperandType((bits >> (3 - i) * 2) & 0x03)
+			now := OperandType((bits >> ((3 - i) * 2)) & 0x03)
 			if now != OPERAND_TYPE_OMITTED {
 				operandTypes = append(operandTypes, now)
-				operandCount++
+			} else {
+				break
 			}
 		}
+		operandCount = len(operandTypes)
 	}
 
 	operands := make([]uint16, operandCount)
@@ -218,12 +232,17 @@ func (this *ZMachine) executeCycle() {
 		case 1:
 			imp1op[opcode](this, operands[0])
 		case 2:
-			imp2op[opcode](this, operands[0], operands[2])
+			imp2op[opcode](this, operands[0], operands[1])
+		case 3:
+			imp3op[opcode](this, operands[0], operands[1], operands[2])
+		case 4:
+			imp4op[opcode](this, operands[0], operands[1], operands[2], operands[3])
 		default:
 			panic("Too many operands!")
 		}
 	}
 
+	this.pc++
 	this.opcodesExecuted++
 }
 

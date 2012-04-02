@@ -62,6 +62,10 @@ func (this *ZMachine) getObjectPropertyAddress(obj, prop byte) int {
 	return 0
 }
 
+func (this *ZMachine) getDefaultPropertyAddress(prop byte) int {
+	return int(this.objectTableStart) + (int(prop)-1)*2
+}
+
 func (this *ZMachine) getObjectPropertySize(obj, prop byte) byte {
 	address := this.getObjectPropertyAddress(obj, prop) - 1
 	return this.memory[address]/32 + 1
