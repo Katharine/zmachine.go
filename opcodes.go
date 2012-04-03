@@ -52,8 +52,11 @@ var imp0op = []func(*ZMachine){
 		this.branch(false)
 	},
 
-	// restart (TODO)
-	nil,
+	// restart
+	func(this *ZMachine) {
+		this.Run()
+		this.pc--
+	},
 
 	// ret_popped
 	func(this *ZMachine) {
@@ -65,9 +68,11 @@ var imp0op = []func(*ZMachine){
 		this.stack.Pop()
 	},
 
-	// quit (TODO)
+	// quit
 	func(this *ZMachine) {
-		panic("Story ended.")
+		this.running = false
+		close(this.output)
+		close(this.errors)
 	},
 
 	// new_line
