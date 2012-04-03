@@ -17,6 +17,7 @@ const OPERAND_TYPE_OMITTED OperandType = 3
 type ZMachine struct {
 	input  chan string
 	output chan string
+	errors chan error
 
 	story_file string
 	memory     []byte
@@ -45,18 +46,22 @@ type ZMachine struct {
 	opcodesExecuted int
 }
 
-func Make(file string, in chan string, out chan string) ZMachine {
+func Make(file string, in chan string, out chan string, err chan error) ZMachine {
 	machine := ZMachine{
 		story_file: file,
 		input:      in,
 		output:     out,
+		errors:     err,
 	}
 
 	return machine
 }
 
-func (this *ZMachine) LoadStory() (err error) {
+func (this *ZMachine) LoadStory() error {
 	file, err := os.Open(this.story_file)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 
 	stat, _ := file.Stat()
@@ -64,7 +69,7 @@ func (this *ZMachine) LoadStory() (err error) {
 	this.memory = make([]byte, stat.Size())
 	_, err = file.Read(this.memory)
 
-	return
+	return err
 }
 
 func (this *ZMachine) CompleteSetup() {
@@ -111,7 +116,11 @@ func (this *ZMachine) mainLoop() {
 }
 
 func (this *ZMachine) Run() {
-	this.LoadStory()
+	if err := this.LoadStory(); err != nil {
+		this.errors <- err
+		close(this.output)
+		return
+	}
 	this.CompleteSetup()
 	if !this.running {
 		this.running = true
