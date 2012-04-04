@@ -42,9 +42,17 @@ var imp0op = []func(*ZMachine){
 		// Nothing happens.
 	},
 
-	// save (TODO)
+	// save
 	func(this *ZMachine) {
-		this.branch(false)
+		this.output <- "Please enter a filename to save: "
+		filename := <-this.input
+		if err := SaveQuetzalFile(filename, this, true); err != nil {
+			this.output <- err.Error()
+			this.output <- "\n"
+			this.branch(false)
+		} else {
+			this.branch(true)
+		}
 	},
 
 	// restore
