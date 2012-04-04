@@ -17,7 +17,7 @@ func LoadQuetzalFile(filename string, machine *ZMachine) (err error) {
 		return err
 	}
 
-	form, err := chunk.Make(f)
+	form, err := chunk.New(f)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func LoadQuetzalFile(filename string, machine *ZMachine) (err error) {
 	}
 
 	for {
-		if chunk, err := chunk.Make(f); err == nil {
+		if chunk, err := chunk.New(f); err == nil {
 			if f, ok := quetzalChunkHandlers[chunk.Name()]; ok {
 				if err := f(machine, chunk); err != nil {
 					return err
