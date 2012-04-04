@@ -41,6 +41,6 @@ func (this *Stack) Size() uint {
 	return this.pointer
 }
 
-func MakeStack(size uint) Stack {
+func NewStack(size uint) Stack {
 	return Stack{make([]uint16, size), 0}
 }

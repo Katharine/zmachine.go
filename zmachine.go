@@ -46,7 +46,7 @@ type ZMachine struct {
 	opcodesExecuted int
 }
 
-func Make(file string, in chan string, out chan string, err chan error) ZMachine {
+func New(file string, in chan string, out chan string, err chan error) ZMachine {
 	machine := ZMachine{
 		story_file: file,
 		input:      in,
@@ -101,8 +101,8 @@ func (this *ZMachine) CompleteSetup() {
 
 	this.pc = int(this.number(0x06))
 
-	this.stack = MakeStack(1024)
-	this.callStack = MakeStack(1024)
+	this.stack = NewStack(1024)
+	this.callStack = NewStack(1024)
 
 	n := uint16(this.memory[this.dictionaryStart]) + this.dictionaryStart + 1
 	this.wordSeparators = []byte(this.memory[this.dictionaryStart+1 : n])
