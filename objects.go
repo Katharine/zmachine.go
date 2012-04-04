@@ -9,7 +9,7 @@ func (this *ZMachine) getObjectAttribute(obj, attribute byte) bool {
 		panic("Attempt to read invalid attribute")
 	}
 	if obj == 0 {
-		panic("Attempted to read attribute from null object")
+		return false
 	}
 	address := uint16(this.getObjectAddress(obj))
 	bit := byte(0x80 >> (attribute % 8))
