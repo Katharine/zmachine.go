@@ -57,7 +57,7 @@ func Make(file string, in chan string, out chan string, err chan error) ZMachine
 	return machine
 }
 
-func (this *ZMachine) LoadStory() error {
+func (this *ZMachine) loadStory(buffer *[]byte) error {
 	file, err := os.Open(this.story_file)
 	if err != nil {
 		return err
@@ -66,10 +66,17 @@ func (this *ZMachine) LoadStory() error {
 
 	stat, _ := file.Stat()
 
-	this.memory = make([]byte, stat.Size())
-	_, err = file.Read(this.memory)
+	buf := make([]byte, stat.Size())
+	_, err = file.Read(buf)
+	if err == nil {
+		*buffer = buf
+	}
 
 	return err
+}
+
+func (this *ZMachine) LoadStory() error {
+	return this.loadStory(&this.memory)
 }
 
 func (this *ZMachine) CompleteSetup() {
@@ -261,7 +268,7 @@ func (this *ZMachine) getVariable(variable byte) uint16 {
 	} else if variable >= 0x10 {
 		return this.number(int(this.globalVariableStart) + ((int(variable) - 0x10) * 2))
 	} else {
-		return this.stack.Look(int(this.callStack.Peek()) + int(variable) - 1)
+		return this.stack.Look(uint(this.callStack.Peek()) + uint(variable) - 1)
 	}
 	return 0
 }
@@ -272,7 +279,7 @@ func (this *ZMachine) setVariable(variable byte, value uint16) {
 	} else if variable >= 0x10 {
 		this.setNumber(int(this.globalVariableStart)+(int(variable)-0x10)*2, value)
 	} else {
-		this.stack.Set(int(this.callStack.Peek())+int(variable)-1, value)
+		this.stack.Set(uint(this.callStack.Peek())+uint(variable)-1, value)
 	}
 }
 
