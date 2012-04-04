@@ -47,9 +47,17 @@ var imp0op = []func(*ZMachine){
 		this.branch(false)
 	},
 
-	// restore (TODO)
+	// restore
 	func(this *ZMachine) {
-		this.branch(false)
+		this.output <- "Please enter a filename to load: "
+		filename := <-this.input
+		if err := LoadQuetzalFile(filename, this); err != nil {
+			this.output <- err.Error()
+			this.output <- "\n"
+			this.branch(false)
+		} else {
+			this.branch(true)
+		}
 	},
 
 	// restart
